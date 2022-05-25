@@ -4,12 +4,12 @@
 #include "Share.h"
 #include <vector>
 
-const BucketEle_t INVALID_CANDIDATE = ~0;
-const int MAX_COMPHASH_DISTANCE = ~(1 << (sizeof(int) * 8 - 1));
-const float MAX_SIFT_DISTANCE = 1.0e38f;
-const int POSSIBLE_CANDIDATES = 8;
-const int HASH_MATCHER_BLOCK_SIZE = 32;
-const int HASH_MATCHER_ITEMS_PER_THREAD = 2;
+constexpr BucketEle_t INVALID_CANDIDATE = ~0;
+constexpr int MAX_COMPHASH_DISTANCE = ~(1 << (sizeof(int) * 8 - 1));
+constexpr float MAX_SIFT_DISTANCE = 1.0e38f;
+constexpr int POSSIBLE_CANDIDATES = 8;
+constexpr int HASH_MATCHER_BLOCK_SIZE = 32;
+constexpr int HASH_MATCHER_ITEMS_PER_THREAD = 2;
 
 class HashMatcher {
 public:

@@ -1,0 +1,98 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "Default",
+            "hidden": true,
+            "generator": "Ninja",
+            "environment": {
+                "VCPKG_BINARY_SOURCES": "nuget,mcs-nuget,read"
+            },
+            "binaryDir": "${sourceDir}/../build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/../install/${presetName}",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_INSTALLED_DIR": "${sourceDir}/../build/vcpkg_installed"
+            }
+        },
+        {
+            "name": "default-msvc",
+            "inherits": "Default",
+            "hidden": true,
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "toolset": {
+                "value": "host=x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "x64-Debug-msvc",
+            "inherits": "default-msvc",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "x64-RelWithDebInfo-msvc",
+            "inherits": "default-msvc",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+            }
+        },
+        {
+            "name": "x64-Release-msvc",
+            "inherits": "default-msvc",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "default-gcc",
+            "inherits": "Default",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {}
+            }
+        },
+        {
+            "name": "gcc-debug",
+            "inherits": "default-gcc",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "gcc-release",
+            "inherits": "default-gcc",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        }
+    ]
+}

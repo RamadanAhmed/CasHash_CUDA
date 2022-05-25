@@ -1,90 +1,127 @@
-project(CasHash-CUDA)
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.18)
+project(
+  CasHash-CUDA
+  VERSION 1.0.0.0
+  LANGUAGES C CXX CUDA)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed. Please make a seperate directory and run cmake from there.")
 endif()
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Debug")
-endif()
+find_package(CUDAToolkit REQUIRED)
+find_package(OpenCV REQUIRED)
 
-string(TOLOWER "${CMAKE_BUILD_TYPE}" cmake_build_type_tolower)
-if( NOT cmake_build_type_tolower STREQUAL "debug"
-    AND NOT cmake_build_type_tolower STREQUAL "release"
-    AND NOT cmake_build_type_tolower STREQUAL "relwithdebinfo")
-  message(FATAL_ERROR "Unknown build type \"${CMAKE_BUILD_TYPE}\". Allowed values are Debug, Release, RelWithDebInfo (case-insensitive).")
-endif()
+add_executable(TestKeyFileReader src/TestKeyFileReader.cpp src/KeyFileReader.cpp)
 
-if(cmake_build_type_tolower STREQUAL "debug")
-  list(APPEND CMAKE_CXX_FLAGS "-Wall -Wno-long-long")
-  #add_definitions(-DDEBUG_HASH_MATCHER)
-  #add_definitions(-DDEBUG_HASH_CONVERTER2)
-endif()
+target_include_directories(TestKeyFileReader PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
 
-find_package(CUDA REQUIRED)
+target_compile_features(TestKeyFileReader PRIVATE cxx_std_17)
 
-# Kepler
-#list(APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_30,code=sm_30")
-list(APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_35,code=sm_35")
+set_target_properties(TestKeyFileReader
+                      PROPERTIES
+                      CUDA_ARCHITECTURES 35 50 72
+                      CUDA_RESOLVE_DEVICE_SYMBOLS ON
+                      CUDA_HOST_COMPILATION_CPP OFF
+                      CUDA_PROPAGATE_HOST_FLAGS OFF
+                      CUDA_SEPARABLE_COMPILATION ON
+                      CUDA_STANDARD 11)
 
-# C++0x support
-list(APPEND CUDA_NVCC_FLAGS "-std=c++11")
-set(CMAKE_CXX_STANDARD 11)
+target_link_libraries(TestKeyFileReader 
+                      PRIVATE
+                      opencv_features2d
+                      opencv_highgui
+                      opencv_core
+                      CUDA::toolkit
+                      CUDA::curand
+                      CUDA::cudart_static)
 
-# export compile commands so that our auto-completion system can index the source files
-set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-
-include_directories(${PROJECT_SOURCE_DIR}/include)
-
-include_directories(${PROJECT_SOURCE_DIR}/third_party/cub)
-
-#cuda_add_executable(KeyMatchCUDA
-#  src/main.cpp
-#  src/KeyFileReader.cpp
-#  )
-
-cuda_add_executable(TestKeyFileReader
-  src/TestKeyFileReader.cpp
-  src/KeyFileReader.cpp
-  )
-
-cuda_add_executable(TestHashConverter
+add_executable(
+  TestHashConverter
   src/TestHashConverter.cpp
   src/KeyFileReader.cpp
   src/HashConverter.cpp
-  src/HashConverter.cu
-  )
+  src/HashConverter.cu)
 
-target_link_libraries(
-  TestHashConverter
-  curand)
+target_include_directories(TestHashConverter PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
 
-cuda_add_executable(TestHashMatcher
+target_compile_features(TestHashConverter PRIVATE cxx_std_17)
+
+set_target_properties(TestHashConverter
+                      PROPERTIES
+                      CUDA_ARCHITECTURES 35 50 72
+                      CUDA_RESOLVE_DEVICE_SYMBOLS ON
+                      CUDA_HOST_COMPILATION_CPP OFF
+                      CUDA_PROPAGATE_HOST_FLAGS OFF
+                      CUDA_SEPARABLE_COMPILATION ON
+                      CUDA_STANDARD 11)
+
+target_link_libraries(TestHashConverter 
+                      PRIVATE
+                      opencv_features2d
+                      opencv_highgui
+                      opencv_core
+                      CUDA::toolkit
+                      CUDA::curand
+                      CUDA::cudart)
+
+add_executable(
+  TestHashMatcher
   src/TestHashMatcher.cpp
   src/KeyFileReader.cpp
   src/HashConverter.cpp
   src/HashConverter.cu
   src/HashMatcher.cpp
-  src/HashMatcher.cu
-  )
+  src/HashMatcher.cu)
 
-target_link_libraries(
-   TestHashMatcher
-   curand)
+target_link_libraries(TestHashMatcher 
+                      PRIVATE
+                      opencv_features2d
+                      opencv_highgui
+                      opencv_core
+                      CUDA::toolkit
+                      CUDA::curand
+                      CUDA::cudart)
+target_include_directories(TestHashMatcher PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
 
-cuda_add_executable(KeyMatchCUDA
+target_compile_features(TestHashMatcher PRIVATE cxx_std_17)
+
+set_target_properties(TestHashMatcher
+                      PROPERTIES
+                      CUDA_ARCHITECTURES 35 50 72
+                      CUDA_RESOLVE_DEVICE_SYMBOLS ON
+                      CUDA_HOST_COMPILATION_CPP OFF
+                      CUDA_PROPAGATE_HOST_FLAGS OFF
+                      CUDA_SEPARABLE_COMPILATION ON
+                      CUDA_STANDARD 11)
+
+add_executable(
+  KeyMatchCUDA
   src/main.cpp
   src/KeyFileReader.cpp
   src/HashConverter.cpp
   src/HashConverter.cu
   src/HashMatcher.cpp
-  src/HashMatcher.cu
-  )
+  src/HashMatcher.cu)
 
-target_link_libraries(
-   KeyMatchCUDA
-   curand)
+target_link_libraries(KeyMatchCUDA 
+                      PRIVATE
+                      curand
+                      opencv_features2d
+                      opencv_highgui
+                      opencv_core
+                      CUDA::toolkit
+                      CUDA::curand
+                      CUDA::cudart)
 
-# For HHLR
-configure_file(job.sh.in job.sh @ONLY)
+target_include_directories(KeyMatchCUDA PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include)
+
+target_compile_features(KeyMatchCUDA PRIVATE cxx_std_17)
+
+set_target_properties(KeyMatchCUDA
+                      PROPERTIES
+                      CUDA_ARCHITECTURES 35 50 72
+                      CUDA_RESOLVE_DEVICE_SYMBOLS ON
+                      CUDA_HOST_COMPILATION_CPP OFF
+                      CUDA_PROPAGATE_HOST_FLAGS OFF
+                      CUDA_SEPARABLE_COMPILATION ON
+                      CUDA_STANDARD 11)
