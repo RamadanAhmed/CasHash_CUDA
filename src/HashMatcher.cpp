@@ -6,7 +6,7 @@
 #include <cuda.h>
 #include <iostream>
 
-HashMatcher::HashMatcher() {
+HashMatcher::HashMatcher(FeatureCache * cache) : cache_{cache}{
     hashMatcherStream_ = 0;
 }
 
@@ -22,9 +22,9 @@ int PairListIndex(int imageIndex1, int imageIndex2) {
 }
 
 void HashMatcher::AddImage(const ImageDevice &d_Image) {
-    d_imageList_.push_back(d_Image);
+    //d_imageList_.push_back(d_Image);
 
-    int currentImages = d_imageList_.size();
+    ++currentImages;
 
     for(int imageIndex = 0; imageIndex < currentImages - 1; imageIndex++) {
         GeneratePair(currentImages - 1, imageIndex); // pair with all previous images
@@ -41,9 +41,9 @@ cudaEvent_t HashMatcher::AddImageAsync(const ImageDevice &d_Image, cudaEvent_t s
         cudaStreamWaitEvent(hashMatcherStream_, sync, 0);
     }
 
-    d_imageList_.push_back(d_Image);
+    //d_imageList_.push_back(d_Image);
 
-    int currentImages = d_imageList_.size();
+    ++currentImages;
 
     for(int imageIndex = 0; imageIndex < currentImages - 1; imageIndex++) {
         GeneratePair(currentImages - 1, imageIndex); // pair with all previous images
@@ -65,7 +65,7 @@ MatchPairListPtr HashMatcher::MatchPairList( int queryImageIndex, int targetImag
     auto queryTargetPair = std::make_pair(queryImageIndex, targetImageIndex);
 
     if(!matchDataBase_.count(queryTargetPair)) {
-        ImageDevice &queryImage = d_imageList_[queryImageIndex];
+        auto queryImage = *cache_->get(queryImageIndex);//d_imageList_[queryImageIndex];
         BucketElePtr d_candidateArray = queryImage.targetCandidates[targetImageIndex];
         BucketElePtr h_candidateArray = new BucketEle_t[queryImage.cntPoint];
 

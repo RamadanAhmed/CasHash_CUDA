@@ -11,16 +11,16 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Usage: %s <list.txt> outfile\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-
+    FeatureCache feat_cache(20);
     KeyFileReader keyFileReader;
     keyFileReader.OpenKeyList(argv[1]);
     keyFileReader.ZeroMeanProc();
-
+    feat_cache.load(keyFileReader);
     std::cerr << "Initializing CUDA device...\n";
     cudaSetDevice(0);
 
     HashConverter hashConverter;
-    HashMatcher hashMatcher;
+    HashMatcher hashMatcher(&feat_cache);
 
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     for(int imageIndex = 0; imageIndex < keyFileReader.cntImage; imageIndex++) {
         ImageDevice newImage;
 
-        std::cerr << "---------------------\nUploading image #" << imageIndex << " to GPU...\n";
+        
         cudaEvent_t kfFinishEvent = keyFileReader.UploadImageAsync(newImage, imageIndex);
 
         std::cerr << "Calculating compressed Hash Values for image #" << imageIndex << "\n"; 

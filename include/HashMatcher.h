@@ -2,6 +2,7 @@
 
 #include <cuda_runtime.h>
 #include "Share.h"
+#include "FeatureCache.h"
 #include <vector>
 
 constexpr BucketEle_t INVALID_CANDIDATE = ~0;
@@ -13,7 +14,7 @@ constexpr int HASH_MATCHER_ITEMS_PER_THREAD = 2;
 
 class HashMatcher {
 public:
-    HashMatcher();
+    HashMatcher(FeatureCache * cache);
     ~HashMatcher();
     int NumberOfMatch(int queryImageIndex, int targetImageIndex);
     MatchPairListPtr MatchPairList(int queryImageIndex, int targetImageIndex);
@@ -21,9 +22,12 @@ public:
     cudaEvent_t AddImageAsync(const ImageDevice &d_Image, cudaEvent_t sync = NULL);
     
 private:
-    std::vector<ImageDevice> d_imageList_;
+    //std::vector<ImageDevice> d_imageList_;
+    // non-owing ptr
+    FeatureCache * cache_;
     std::map< std::pair< int, int >, MatchPairListPtr > matchDataBase_;
     cudaStream_t hashMatcherStream_;
+    std::size_t currentImages = 0;
 
     cudaEvent_t GeneratePair(int queryImageIndex, int targetImageIndex);
 };

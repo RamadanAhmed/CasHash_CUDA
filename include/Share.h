@@ -76,7 +76,9 @@ struct ImageHost {
     int cntPoint; // the number of SIFT points
     std::string keyFilePath;
     Matrix<SiftData_t> siftData; // [cntPoint x 128] Matrix, storing all sift vectors one-off
-
+    Matrix<CompHashData_t> compHashData; // [cntPoint x 2 Matrix]
+    Matrix<HashData_t> bucketIDList; // element -> buckets [cntPoint x kCntBucketGroup]
+    Matrix<BucketEle_t> bucketList; // bucket -> elements [kCntBucketGroup*kCntBucketPerGroup x kMaxMemberPerGroup]
 };
 
 struct ImageDevice {
@@ -86,6 +88,43 @@ struct ImageDevice {
     Matrix<HashData_t> bucketIDList; // element -> buckets [cntPoint x kCntBucketGroup]
     Matrix<BucketEle_t> bucketList; // bucket -> elements [kCntBucketGroup*kCntBucketPerGroup x kMaxMemberPerGroup]
     std::map<int, BucketElePtr> targetCandidates;
+    ~ImageDevice() {
+        freeSiftData();
+        freeHashData();
+        freeBucketData();
+    }
+    void freeSiftData() {
+        if(siftData.elements != nullptr) {
+            cudaFree(siftData.elements);
+            siftData.elements = nullptr;
+        }
+    }
+    void freeHashData() {
+        if(compHashData.elements != nullptr) {
+            cudaFree(compHashData.elements);
+            compHashData.elements = nullptr;
+        }
+
+    }
+    void freeBucketData() {
+        if(bucketIDList.elements != nullptr) {
+            cudaFree(bucketIDList.elements);
+            cudaFree(bucketList.elements);
+            bucketList.elements = nullptr;
+            bucketIDList.elements = nullptr;
+        }
+    }
+    bool isEmpty() {
+        return siftData.elements == nullptr;
+    }
+
+    void downloadHashData(Matrix<SiftData_t> *siftData) {
+        // SiftData_t *h_Array = new T[count];
+        // cudaMemcpy(h_Array, d_Array, count * sizeof(T), cudaMemcpyDeviceToHost);
+    }
+    void downloadBucketData(Matrix<HashData_t> bucketIDList, Matrix<BucketEle_t> bucketList) {
+        
+    }
 };
 
 

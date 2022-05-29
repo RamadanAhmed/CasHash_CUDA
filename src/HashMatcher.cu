@@ -264,26 +264,28 @@ __global__ void GeneratePairKernelFast(Matrix<HashData_t> g_queryImageBucketID,
 }
 
 cudaEvent_t HashMatcher::GeneratePair(int queryImageIndex, int targetImageIndex) {
-    ImageDevice &queryImage = d_imageList_[queryImageIndex];
-    const ImageDevice &targetImage = d_imageList_[targetImageIndex];
+    //ImageDevice &queryImage = d_imageList_[queryImageIndex];
+    //const ImageDevice &targetImage = d_imageList_[targetImageIndex];
 
+    auto queryImage = cache_->get(queryImageIndex);
+    auto targetImage = cache_->get(targetImageIndex);
     BucketElePtr candidateArray;
-    cudaMalloc(&candidateArray, sizeof(BucketEle_t) * queryImage.cntPoint);
+    cudaMalloc(&candidateArray, sizeof(BucketEle_t) * queryImage->cntPoint);
     CUDA_CHECK_ERROR;
 
-    queryImage.targetCandidates[targetImageIndex] = candidateArray;
+    queryImage->targetCandidates[targetImageIndex] = candidateArray;
 
-    dim3 gridSize(queryImage.cntPoint);
+    dim3 gridSize(queryImage->cntPoint);
     dim3 blockSize(HASH_MATCHER_BLOCK_SIZE);
     
     GeneratePairKernelFast<<<gridSize, blockSize, 0, hashMatcherStream_>>>(
-        queryImage.bucketIDList,
-        queryImage.compHashData,
-        queryImage.siftData,
-        queryImage.cntPoint,
-        targetImage.bucketList,
-        targetImage.compHashData,
-        targetImage.siftData,
+        queryImage->bucketIDList,
+        queryImage->compHashData,
+        queryImage->siftData,
+        queryImage->cntPoint,
+        targetImage->bucketList,
+        targetImage->compHashData,
+        targetImage->siftData,
         candidateArray);
 
     cudaEvent_t finish;
