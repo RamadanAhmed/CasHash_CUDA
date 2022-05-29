@@ -65,17 +65,17 @@ MatchPairListPtr HashMatcher::MatchPairList( int queryImageIndex, int targetImag
     auto queryTargetPair = std::make_pair(queryImageIndex, targetImageIndex);
 
     if(!matchDataBase_.count(queryTargetPair)) {
-        auto queryImage = *cache_->get(queryImageIndex);//d_imageList_[queryImageIndex];
-        BucketElePtr d_candidateArray = queryImage.targetCandidates[targetImageIndex];
-        BucketElePtr h_candidateArray = new BucketEle_t[queryImage.cntPoint];
+        auto queryImage = cache_->get(queryImageIndex);//d_imageList_[queryImageIndex];
+        BucketElePtr d_candidateArray = queryImage->targetCandidates[targetImageIndex];
+        BucketElePtr h_candidateArray = new BucketEle_t[queryImage->cntPoint];
 
-        cudaMemcpy(h_candidateArray, d_candidateArray, queryImage.cntPoint * sizeof(BucketEle_t), cudaMemcpyDeviceToHost);
+        cudaMemcpy(h_candidateArray, d_candidateArray, queryImage->cntPoint * sizeof(BucketEle_t), cudaMemcpyDeviceToHost);
         cudaFree(d_candidateArray);
         CUDA_CHECK_ERROR;
 
         MatchPairListPtr newMatchPairList(new MatchPairList_t);
 
-        for(int point = 0; point < queryImage.cntPoint; point++) {
+        for(int point = 0; point < queryImage->cntPoint; point++) {
             if(h_candidateArray[point] != INVALID_CANDIDATE) {
                 newMatchPairList->push_back(std::make_pair(point, h_candidateArray[point]));
             }
