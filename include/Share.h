@@ -49,85 +49,6 @@ typedef std::shared_ptr<MatchPair_t> MatchPairPtr;
 typedef std::vector<MatchPair_t> MatchPairList_t;
 typedef std::shared_ptr<MatchPairList_t> MatchPairListPtr;
 
-template <typename T>
-struct Matrix {
-    int width;
-    int height;
-    size_t pitch; // row size in bytes
-    T* elements;
-
-    CUDA_UNIVERSAL_QUALIFIER inline T& operator() (int i, int j) {
-        return *(reinterpret_cast<T *>(reinterpret_cast<char *>(elements) + i * pitch) + j);
-    } // no more ugly pointer calcs
-
-    CUDA_UNIVERSAL_QUALIFIER inline const T& operator() (int i, int j) const {
-         return *(reinterpret_cast<T *>(reinterpret_cast<char *>(elements) + i * pitch) + j);
-    }
-
-    Matrix(int H, int W) : height(H), width(W){
-        pitch = sizeof(T) * width; // init pitch, will be adjusted later if use cudaMallocPitch
-    }
-
-    Matrix() : width(0), height(0), pitch(0), elements(NULL) {
-    }
-};
-
-struct ImageHost {
-    int cntPoint; // the number of SIFT points
-    std::string keyFilePath;
-    Matrix<SiftData_t> siftData; // [cntPoint x 128] Matrix, storing all sift vectors one-off
-    Matrix<CompHashData_t> compHashData; // [cntPoint x 2 Matrix]
-    Matrix<HashData_t> bucketIDList; // element -> buckets [cntPoint x kCntBucketGroup]
-    Matrix<BucketEle_t> bucketList; // bucket -> elements [kCntBucketGroup*kCntBucketPerGroup x kMaxMemberPerGroup]
-};
-
-struct ImageDevice {
-    int cntPoint;
-    Matrix<SiftData_t> siftData;
-    Matrix<CompHashData_t> compHashData; // [cntPoint x 2 Matrix]
-    Matrix<HashData_t> bucketIDList; // element -> buckets [cntPoint x kCntBucketGroup]
-    Matrix<BucketEle_t> bucketList; // bucket -> elements [kCntBucketGroup*kCntBucketPerGroup x kMaxMemberPerGroup]
-    std::map<int, BucketElePtr> targetCandidates;
-    ~ImageDevice() {
-        freeSiftData();
-        freeHashData();
-        freeBucketData();
-    }
-    void freeSiftData() {
-        if(siftData.elements != nullptr) {
-            cudaFree(siftData.elements);
-            siftData.elements = nullptr;
-        }
-    }
-    void freeHashData() {
-        if(compHashData.elements != nullptr) {
-            cudaFree(compHashData.elements);
-            compHashData.elements = nullptr;
-        }
-
-    }
-    void freeBucketData() {
-        if(bucketIDList.elements != nullptr) {
-            cudaFree(bucketIDList.elements);
-            cudaFree(bucketList.elements);
-            bucketList.elements = nullptr;
-            bucketIDList.elements = nullptr;
-        }
-    }
-    bool isEmpty() {
-        return siftData.elements == nullptr;
-    }
-
-    void downloadHashData(Matrix<SiftData_t> *siftData) {
-        // SiftData_t *h_Array = new T[count];
-        // cudaMemcpy(h_Array, d_Array, count * sizeof(T), cudaMemcpyDeviceToHost);
-    }
-    void downloadBucketData(Matrix<HashData_t> bucketIDList, Matrix<BucketEle_t> bucketList) {
-        
-    }
-};
-
-
 
 #define CUDA_CHECK_ERROR                                                         \
     do {                                                                         \
@@ -176,4 +97,89 @@ inline void dumpHostArray(T const *h_Array, int count) {
     }
     std::cout << "[ " << count << " element(s) ]\n";
 }
+
+
+template <typename T>
+struct Matrix {
+    int width;
+    int height;
+    size_t pitch; // row size in bytes
+    T* elements;
+
+    CUDA_UNIVERSAL_QUALIFIER inline T& operator() (int i, int j) {
+        return *(reinterpret_cast<T *>(reinterpret_cast<char *>(elements) + i * pitch) + j);
+    } // no more ugly pointer calcs
+
+    CUDA_UNIVERSAL_QUALIFIER inline const T& operator() (int i, int j) const {
+         return *(reinterpret_cast<T *>(reinterpret_cast<char *>(elements) + i * pitch) + j);
+    }
+
+    Matrix(int H, int W) : height(H), width(W){
+        pitch = sizeof(T) * width; // init pitch, will be adjusted later if use cudaMallocPitch
+    }
+
+    Matrix() : width(0), height(0), pitch(0), elements(nullptr) {
+    }
+};
+
+struct ImageHost {
+    int cntPoint; // the number of SIFT points
+    std::string keyFilePath;
+    Matrix<SiftData_t> siftData;  // [cntPoint x 128 Matrix]
+    Matrix<CompHashData_t> compHashData; // [cntPoint x 2 Matrix]
+    Matrix<HashData_t> bucketIDList; // element -> buckets [cntPoint x kCntBucketGroup]
+    Matrix<BucketEle_t> bucketList; // bucket -> elements [kCntBucketGroup*kCntBucketPerGroup x kMaxMemberPerGroup]
+};
+
+struct ImageDevice {
+    int cntPoint;
+    Matrix<SiftData_t> siftData; // [cntPoint x 128 Matrix]
+    Matrix<CompHashData_t> compHashData; // [cntPoint x 2 Matrix]
+    Matrix<HashData_t> bucketIDList; // element -> buckets [cntPoint x kCntBucketGroup]
+    Matrix<BucketEle_t> bucketList; // bucket -> elements [kCntBucketGroup*kCntBucketPerGroup x kMaxMemberPerGroup]
+    std::map<int, BucketElePtr> targetCandidates;
+    ~ImageDevice() {
+        freeSiftData();
+        freeHashData();
+        freeBucketData();
+    }
+    void freeSiftData() {
+        cudaFree(siftData.elements);
+        siftData.elements = nullptr;
+        siftData.width = 0;
+        siftData.height = 0;
+        siftData.pitch = 0;
+    }
+    void freeHashData() {
+        cudaFree(compHashData.elements);
+        compHashData.elements = nullptr;
+        compHashData.width = 0;
+        compHashData.height = 0;
+        compHashData.pitch = 0;
+    }
+    void freeBucketData() {
+        cudaFree(bucketIDList.elements);
+        bucketIDList.elements = nullptr;
+        bucketIDList.width = 0;
+        bucketIDList.height = 0;
+        bucketIDList.pitch = 0;
+        cudaFree(bucketList.elements);
+        bucketList.elements = nullptr;
+        bucketList.width = 0;
+        bucketList.height = 0;
+        bucketList.pitch = 0;
+    }
+    bool isEmpty() {
+        return siftData.width == 0 && siftData.height == 0;
+    }
+
+    void downloadHashData(Matrix<SiftData_t> *siftData) {
+        // SiftData_t *h_Array = new T[count];
+        // cudaMemcpy(h_Array, d_Array, count * sizeof(T), cudaMemcpyDeviceToHost);
+    }
+    void downloadBucketData(Matrix<HashData_t> bucketIDList, Matrix<BucketEle_t> bucketList) {
+        
+    }
+};
+
 

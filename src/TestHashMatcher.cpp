@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cuda_runtime.h>
 
 #include "HashMatcher.h"
@@ -7,7 +8,9 @@
 #include "Share.h"
 #include "FeatureCache.h"
 
+#define DEBUG_HASH_MATCHER
 int main(int argc, char *argv[]) {
+    cudaSetDevice(0);
     FeatureCache feat_cache(20);
     KeyFileReader kf;
     std::cerr << "reading keylist\n";
@@ -21,7 +24,7 @@ int main(int argc, char *argv[]) {
     HashConverter hc;
 
     HashMatcher hm(&feat_cache);
-
+    std::ofstream log ("log.txt");
     for (int i = 0; i < kf.cntImage; i++) {
         //kf.UploadImage(curImg, i);
         auto sp_image = feat_cache.get(i);
@@ -34,15 +37,18 @@ int main(int argc, char *argv[]) {
         hm.AddImage(*sp_image);
 
         for(int j = 0; j < i; j++) {
-            std::cerr << hm.NumberOfMatch(i, j) << " match(es) found between image " << i << " and " << j << "\n";
 #ifdef DEBUG_HASH_MATCHER
+            
+            log << hm.NumberOfMatch(i, j) << " match(es) found between image " << i << " and " << j << "\n";
+
             MatchPairListPtr mpList = hm.MatchPairList(i, j);
             for(MatchPairList_t::iterator it = mpList->begin(); it != mpList->end(); it++) {
-                std::cerr << "(" << it->first << ", " << it->second << ") ";
+                log << "(" << it->first << ", " << it->second << ") ";
             }
-            std::cerr << std::endl;
+            log << std::endl;
 #endif
         }
+        hm.releaseCandidates(i);
 
     }
 

@@ -20,7 +20,7 @@ public:
     MatchPairListPtr MatchPairList(int queryImageIndex, int targetImageIndex);
     void AddImage(const ImageDevice &d_Image); /* return value: image index */
     cudaEvent_t AddImageAsync(const ImageDevice &d_Image, cudaEvent_t sync = NULL);
-    
+    void releaseCandidates(int queryImageIndex);
 private:
     //std::vector<ImageDevice> d_imageList_;
     // non-owing ptr

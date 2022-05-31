@@ -7,6 +7,7 @@
 
 
 int main(int argc, char *argv[]) {
+    cudaSetDevice(0);
     ImageDevice d_Img;
     KeyFileReader kf;
     std::cout << "reading keylist\n";

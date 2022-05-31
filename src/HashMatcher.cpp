@@ -61,6 +61,11 @@ int HashMatcher::NumberOfMatch(int queryImageIndex, int targetImageIndex) {
     return MatchPairList(queryImageIndex, targetImageIndex)->size();
 }
 
+void HashMatcher::releaseCandidates(int queryImageIndex) {
+    auto queryImage = cache_->get(queryImageIndex);
+     queryImage->targetCandidates.clear();
+}
+
 MatchPairListPtr HashMatcher::MatchPairList( int queryImageIndex, int targetImageIndex ) {
     auto queryTargetPair = std::make_pair(queryImageIndex, targetImageIndex);
 
