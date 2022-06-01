@@ -14,6 +14,8 @@ public:
     cudaEvent_t UploadImageAsync(ImageDevice &imgDev, const int index, cudaEvent_t sync = 0);
     void AddKeyFile(const char *path);
     void OpenKeyList(const char *path);
+    void LoadFeatures(std::string const& directory);
+    void LoadDescriptorFile(std::string const& file);
     void ZeroMeanProc();
 
     int cntImage;

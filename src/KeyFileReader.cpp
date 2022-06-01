@@ -1,10 +1,12 @@
 #include "KeyFileReader.h"
 #include "Share.h"
 
+#include <fstream>
 #include <stdio.h>
 #include <cuda_runtime.h>
 #include <stdlib.h>
 #include <cstring>
+#include <filesystem>
 
 KeyFileReader::KeyFileReader()
 {
@@ -55,7 +57,7 @@ void KeyFileReader::AddKeyFile(const char *path)
 
     for (int i = 0; i < cntPoint; i++)
     {
-        fscanf(keyFile, "%*f%*f%*f%*f"); // ignoring sift headers
+        //fscanf(keyFile, "%*f%*f%*f%*f"); // ignoring sift headers
         SiftDataPtr rowVector = newImage.siftData.elements + kDimSiftData * i;
         for (int j = 0; j < kDimSiftData; j++)
         {
@@ -67,6 +69,47 @@ void KeyFileReader::AddKeyFile(const char *path)
     fclose(keyFile);
     h_imageList_.push_back(newImage);
     cntImage = h_imageList_.size();
+}
+
+void KeyFileReader::LoadDescriptorFile(std::string const& file) {
+    std::ifstream desc_file (file, std::ios::binary);
+    if(!desc_file.good()) return;
+    fprintf(stderr, "Reading SIFT vector from %s\n", file.c_str());
+    // read descriptor file
+    std::size_t features_count;
+    desc_file.read((char*)&features_count, 1*sizeof(std::size_t));
+    ImageHost newImage;
+    newImage.cntPoint = cntTotalVector_ = features_count;
+    newImage.keyFilePath = file;
+
+    size_t requiredSize = features_count * kDimSiftData;
+    newImage.siftData.elements = new SiftData_t[requiredSize];
+    newImage.siftData.width = kDimSiftData;
+    newImage.siftData.height = features_count;
+    newImage.siftData.pitch = kDimSiftData * sizeof(SiftData_t);
+    std::vector<unsigned char> sift_data(requiredSize);
+    desc_file.read((char*)sift_data.data(), requiredSize * sizeof(unsigned char));
+    for(int i = 0; i < features_count; ++i) {
+        for(int j = 0; j < kDimSiftData; ++j) {
+            newImage.siftData.elements[j + kDimSiftData * i] = sift_data[j + kDimSiftData * i] * 1.0;
+            siftAccumulator_[j] += newImage.siftData.elements[j + kDimSiftData * i];
+        }
+    }
+    h_imageList_.push_back(newImage);
+    cntImage = h_imageList_.size();
+}
+
+void KeyFileReader::LoadFeatures(std::string const& directory) {
+    // iterate folder
+    // for each desc file
+    // read size_t as count
+    // read 128 * count as sift_element
+    for (const auto& dir_entry : std::filesystem::directory_iterator(directory)){
+        auto file_path = dir_entry.path();
+        if(file_path.extension() == ".desc") {
+            LoadDescriptorFile(file_path.string());
+        }
+    }
 }
 
 void KeyFileReader::OpenKeyList(const char *path)
